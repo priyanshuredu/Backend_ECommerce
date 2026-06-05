@@ -1,6 +1,6 @@
 const userModel = require('../model/userModel');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
+const { createHashPassword, verifyHashPassword } = require('../services/encryption');
 
 const createUser = async (req,res) => {
     const {name ,email ,password} = req.body;
@@ -19,8 +19,7 @@ const createUser = async (req,res) => {
             message:'User already exists with this mail.'
         })
 
-        const salt = bcrypt.genSaltSync(10);
-        const hash = bcrypt.hashSync(password ,salt);
+        const hash = createHashPassword(password);
         const user_data = {name ,email ,password: hash};
 
         const user = await userModel.create(user_data);
@@ -47,9 +46,9 @@ const login = async (req,res) => {
             message:'No user found with this mail.'
         })
 
-        const match = await bcrypt.compareSync(password ,existingUser.password);
+        const match = verifyHashPassword(password ,existingUser.password);
         if(match){
-            const user = {name: existingUser.name, email: existingUser.email};
+            const user = {_id: existingUser._id};
             const token = await jwt.sign(user, process.env.SecretKey);
 
             res.cookie('Token',token);
@@ -69,7 +68,36 @@ const login = async (req,res) => {
 };
 
 const resetPassword = async (req,res) => {
+    const {oldpassword ,password} = req.body;
+    const id = req.user._id;
 
+    if(!oldpassword || !password) return res.status(404).json({
+        message:'Request body not found.'
+    })
+
+    if(oldpassword === password) return res.status(400).json({
+        message:'Old and new password are same.'
+    })
+
+    try{
+        const user = await userModel.findById(id);
+        const match = verifyHashPassword(oldpassword ,user.password);
+        if(match){
+            const hash = createHashPassword(password);
+            user.password = hash;
+            user.save();
+
+            return res.status(200).json({
+                message:'Password updated successfully.'
+            })
+        } else return res.status(404).json({
+            message: "Password doesn't match."
+        })
+    } catch(error){
+        res.status(500).json({
+            message: error.message
+        })
+    }
 };
 
 const verifyEmail = async (req,res) => {
@@ -85,7 +113,19 @@ const updateProfile = async (req,res) => {
 };
 
 const getMe = async (req,res) => {
+    const id = req.user._id;
+    try{
+        const user = await userModel.findById(id);
 
+        res.status(200).json({
+            message:'User fetch successfully.',
+            user:{_id: user._id, name: user.name, email: user.email}
+        })
+    } catch(error){
+        res.status(500).json({
+            message: error.message
+        })
+    }
 };
 
 module.exports = {createUser ,login ,resetPassword ,verifyEmail ,forgotPassword ,updateProfile ,getMe};
