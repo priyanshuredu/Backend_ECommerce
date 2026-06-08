@@ -41,7 +41,7 @@ const login = async (req,res) => {
     });
 
     try{
-        const existingUser = await userModel.fondOne({email});
+        const existingUser = await userModel.findOne({email});
         if(!existingUser) return res.status(404).json({
             message:'No user found with this mail.'
         })
@@ -117,9 +117,10 @@ const getMe = async (req,res) => {
     try{
         const user = await userModel.findById(id);
 
+        const {password ,...user_data} = user.toObject();
         res.status(200).json({
             message:'User fetch successfully.',
-            user:{_id: user._id, name: user.name, email: user.email}
+            user_data
         })
     } catch(error){
         res.status(500).json({

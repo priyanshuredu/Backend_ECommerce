@@ -32,7 +32,5 @@ const userSchema = new mongoose.Schema({
     timestamps: true
 });
 
-userSchema.index({email: 1}); // indexed in ascending order
-
 const userModel = mongoose.model('user',userSchema);
 module.exports = userModel;

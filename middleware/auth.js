@@ -1,9 +1,9 @@
 const jwt = require('jsonwebtoken');
 const userModel = require('../model/userModel');
 
-export default (req, res, next) => {
+module.exports = async (req, res, next) => {
     const authHeader = req.header.authorization;
-    const cookieToken = req.cookie.Token;
+    const cookieToken = req.cookies.Token;
 
     if(!authHeader && !cookieToken) return res.status(404).json({
         message:'Authorization header or token cookie not found.'
@@ -23,9 +23,10 @@ export default (req, res, next) => {
             if(!user) return res.status(404).json({
                 message:'No user found in DB.'
             })
-
-            res.user = user;
-            next();
+            else {
+                req.user = user;
+                next();
+            }
         }
     } catch(error){
         res.status(500).json({

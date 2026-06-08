@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
+const cookieParse = require('cookie-parser');
 const userRoutes = require('./routes/userRoutes');
 
 const app = express();
@@ -18,6 +19,7 @@ app.use(cors({
     origin:'*'
 }))
 app.use(express.json());
+app.use(cookieParse());
 
 /* all routes */
 app.use('/user', userRoutes);
